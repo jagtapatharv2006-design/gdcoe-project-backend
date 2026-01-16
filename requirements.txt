@@ -1,0 +1,33 @@
+# Core dependencies
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic[email]==2.5.0
+
+# Database
+sqlalchemy==2.0.23
+alembic==1.12.1
+psycopg2-binary==2.9.9
+
+# Task queue
+celery==5.3.4
+redis==5.0.1
+
+# HTTP requests
+requests==2.31.0
+
+# AI/ML (for Gemini API)
+google-generativeai==0.3.1
+
+# Code analysis tools (optional, for better analysis)
+radon==6.0.1
+pylint==3.0.2
+ruff==0.1.6
+
+# Utilities
+python-dotenv==1.0.0
+
+# Development dependencies
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2

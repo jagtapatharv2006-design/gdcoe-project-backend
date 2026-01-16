@@ -285,6 +285,25 @@ def calculate_LA(new_tech_usage, reusable_components, oss_engagement, cross_doma
         return 0.5
 
 
+def apply_min_dominance_penalty(AD, EAP, CCL, penalty_min=0.3, penalty_max=0.5, warnings=None):
+    """
+    Apply non-linear minimum dominance penalty:
+    If min(AD, EAP, CCL) < 0.4, reduce final HPPS by 30-50%.
+    """
+    try:
+        min_score = min(AD, EAP, CCL)
+        if min_score < 0.4:
+            penalty = penalty_min + (penalty_max - penalty_min) * (0.4 - min_score) / 0.4
+            if warnings is not None:
+                warnings.append(f"Minimum dominance rule applied: penalty {penalty*100:.1f}%")
+            return 1.0 - penalty
+        return 1.0
+    except Exception as e:
+        if warnings is not None:
+            warnings.append(f"Error in apply_min_dominance_penalty: {str(e)}")
+        return 1.0
+
+
 def apply_non_linear_penalty(AD, EAP, CCL, penalty_range=(0.3, 0.5)):
     """Apply 30-50% penalty if min(AD, EAP, CCL) < 0.4"""
     try:
@@ -334,9 +353,9 @@ def calculate_HPPS(
         CCL = calculate_CCL(active_months, activity_frequency, rating_stability, longest_streak, warnings)
         LA = calculate_LA(new_tech_usage, reusable_components, oss_engagement, cross_domain_work, warnings)
         
+        penalty_factor = apply_min_dominance_penalty(AD, EAP, CCL, warnings=warnings)
         base_HPPS = 0.30 * AD + 0.30 * EAP + 0.25 * CCL + 0.15 * LA
-        penalty_multiplier = apply_non_linear_penalty(AD, EAP, CCL)
-        final_HPPS = base_HPPS * penalty_multiplier
+        final_HPPS = penalty_factor * base_HPPS
         
         return {
             'HPPS': max(0.0, min(1.0, final_HPPS)),
@@ -345,8 +364,8 @@ def calculate_HPPS(
             'EAP': max(0.0, min(1.0, EAP)),
             'CCL': max(0.0, min(1.0, CCL)),
             'LA': max(0.0, min(1.0, LA)),
-            'penalty_applied': penalty_multiplier < 1.0,
-            'penalty_multiplier': penalty_multiplier,
+            'penalty_applied': penalty_factor < 1.0,
+            'penalty_multiplier': penalty_factor,
             'base_HPPS': max(0.0, min(1.0, base_HPPS)),
             'warnings': warnings,
             'errors': errors
